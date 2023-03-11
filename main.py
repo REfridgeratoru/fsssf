@@ -118,7 +118,7 @@ class Obstacle:
     def update(self):
         self.rect.x -= game_speed
         if self.rect.x < -self.rect.width:
-            obstacle.pop()
+            obstacles.pop()
     def draw(self, SCREEN):
         SCREEN.blit(self.image[self.type], self.rect)
 
@@ -147,7 +147,7 @@ class Bird(Obstacle):
         self.index += 1
 
 def main():
-    global game_speed, x_pos_bg, y_pos_bg, points, obstacle
+    global game_speed, x_pos_bg, y_pos_bg, points, obstacles
     run = True
     clock = pygame.time.Clock()
     player = Dinosaur()
@@ -157,6 +157,8 @@ def main():
     y_pos_bg = 380
     points = 0
     font = pygame.font.Font('freesansbold.ttf', 20)
+    obstacles = []
+    death_count = 0
 
     def score():
         global game_speed, points
@@ -190,13 +192,20 @@ def main():
         player.draw(SCREEN)
         player.update(userInput)
 
-        if len(obstacle) == 0:
+        if len(obstacles) == 0:
             if random.randint(0, 2) == 0:
                 obstacles.append(SmallCactus(SMALL_CACTUS))
             elif random.randint(0, 2) == 1:
                 obstacles.append(LargeCactus(LARGE_CACTUS))
             elif random.randint(0, 2) == 2:
                 obstacles.append(Bird(BIRD))
+        for obstacle in obstacles:
+            obstacle.draw(SCREEN)
+            obstacle.update()
+            if player.dino_rect.colliderect(obstacle.rect):
+                pygame.time.delay(2000)
+                death_count += 1
+                menu(death_count)
 
         background()
 
@@ -208,5 +217,29 @@ def main():
         clock.tick(30)
         pygame.display.update()
 
-main()
-
+def menu(death_count):
+    global points
+    run = True
+    while run:
+        SCREEN.fill((255, 255, 255))
+        font = pygame.font.Font('freesansbold.ttf', 30)
+        
+        if death_count == 0:
+            text = font.render("Press any Key to Start", True, (0, 0, 0))
+        elif death_count > 0:
+            text = font.render("Press any Key to Restart", True, (0, 0, 0))
+            score =  font.render("Your Score: " + str(points), True, (0, 0, 0))
+            scoreRect = score.get_rect()
+            scoreRect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50)
+            SCREEN.blit(score, scoreRect)
+        textRect = text.get_rect()
+        textRect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        SCREEN.blit(text, textRect)
+        SCREEN.blit(RUNNING[0], (SCREEN_WIDTH // 2 - 20, SCREEN_HEIGHT // 2 - 140))
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+            if event.type == pygame.KEYDOWN:
+                main()
+menu(death_count=0)
